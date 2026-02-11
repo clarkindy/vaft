@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vaft"
+authors = [
+  { name = "VEST team", email = "satelite2517@snu.ac.kr" },
+]
+description = "Versatile Analytical Framework for Tokamak"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dynamic = ["version"]
+
+dependencies = [
+  "astropy==6.1.7",
+  "cryptography>=42.0.0",
+  "fortranformat",
+  "h5py==3.11.0",
+  "imageio>=2.34.0",
+  "ipykernel>=6.29.4",
+  "ipython",
+  "ipywidgets",
+  "matplotlib==3.7.3",
+  "mysql-connector-python>=8.4.0",
+  "numba",
+  "numpy==1.26.4",
+  "omas==0.94.2",
+  "omfit-classes",
+  "opencv-python>=4.9.0.80",
+  "pandas>=2.2.2",
+  "pyjwt",
+  "PyYAML==6.0.2",
+  "requests-unixsocket==0.4.1",
+  "scikit-learn",
+  "scipy==1.13.0",
+  "seaborn",
+  "snakemake",
+  "statsmodels==0.14.6",
+  "tqdm>=4.67.3",
+  "uncertainties==3.2.2",
+  "urllib3==1.26.13",
+  "wexpect; sys_platform == 'win32'",
+  "xarray>=2024.4.0",
+]
+
+[project.urls]
+homepage = "https://vest-tokamak.github.io/vaft/"
+source = "https://github.com/VEST-Tokamak/vaft"
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "black",
+  "flake8",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "vaft.version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["vaft"]
