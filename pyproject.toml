@@ -17,6 +17,7 @@ dependencies = [
   "cryptography>=42.0.0",
   "fortranformat",
   "h5py==3.11.0",
+  "h5pyd==0.20.0",
   "imageio>=2.34.0",
   "ipykernel>=6.29.4",
   "ipython",
@@ -61,3 +62,8 @@ version = { attr = "vaft.version.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["vaft"]
+
+[tool.uv]
+override-dependencies = [
+  "numpy==1.26.4",
+]
