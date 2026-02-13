@@ -1,5 +1,8 @@
-# This file is omas_imas.py copied from OMAS Version 0.94.2, which is covered by the
-# following copyright and permission notice:
+# Copyright (c) 2026 VEST team
+#
+# This file is omas_imas.py, copied from OMAS Version 0.94.2 and further modified.
+# This file incorporates work which is covered by the following copyright and permission
+# notice:
 #
 #   MIT License
 #
@@ -35,14 +38,15 @@ from .omas_utils import _extra_structures
 
 class IDS:
     def __init__(self, DBentry, occurrence):
+        import imas
+
         self.DBentry = DBentry
         self.occurrence = occurrence
 
     def __getattr__(self, key):
-        import imas
-
-        printd(f"{key} = imas.{key}()", topic='imas_code')
-        tmp = getattr(imas, key)()
+        printd(f"{key} = DBentry.factory.{key}()", topic='imas_code')
+        factory = self.DBentry.factory
+        tmp = getattr(factory, key)()
         setattr(self, key, tmp)
         return tmp
 
@@ -53,7 +57,7 @@ class IDS:
 # --------------------------------------------
 # IMAS convenience functions
 # --------------------------------------------
-def imas_open(user, machine, pulse, run, occurrence={}, new=False, imas_major_version='3', backend='MDSPLUS', verbose=True):
+def imas_open(user, machine, pulse, run, occurrence={}, new=False, imas_major_version='3', backend='MDSPLUS', verbose=True, *, dd_version=None):
     """
     function to open an IMAS
 
@@ -83,25 +87,29 @@ def imas_open(user, machine, pulse, run, occurrence={}, new=False, imas_major_ve
         )
 
     import imas
+    try:
+        from imas_core import imasdef
+    except ModuleNotFoundError:
+        from imas import imasdef
 
     printd(
-        f"DBentry = imas.DBEntry(imas.imasdef.{backend}_BACKEND, {repr(machine)}, {pulse}, {run}, {repr(user)}, {repr(imas_major_version)})",
+        f"DBentry = imas.DBEntry(imasdef.{backend}_BACKEND, {repr(machine)}, {pulse}, {run}, {repr(user)}, {repr(imas_major_version)})",
         topic='imas_code',
     )
-    DBentry = imas.DBEntry(getattr(imas.imasdef, backend + '_BACKEND'), machine, pulse, run, user, imas_major_version)
+    DBentry = imas.DBEntry(getattr(imasdef, backend + '_BACKEND'), machine, pulse, run, user, imas_major_version, dd_version=dd_version)
 
-    if new:
-        printd(f"DBentry.create()", topic='imas_code')
-        ret_code = DBentry.create()[0]
-    else:
-        printd(f"DBentry.open()", topic='imas_code')
-        ret_code = DBentry.open()[0]
-
-    if ret_code < 0:
+    try:
+        if new:
+            printd(f"DBentry.create()", topic='imas_code')
+            DBentry.create()
+        else:
+            printd(f"DBentry.open()", topic='imas_code')
+            DBentry.open()
+    except Exception as error:
         raise IOError(
             'Error opening imas entry (user:%s machine:%s pulse:%s run:%s imas_major_version:%s backend=%s)'
             % (user, machine, pulse, run, imas_major_version, backend)
-        )
+        ) from error
     return IDS(DBentry, occurrence)
 
 
@@ -385,7 +393,7 @@ def save_omas_imas(ods, user=None, machine=None, pulse=None, run=None, occurrenc
 
     try:
         # open IMAS tree
-        ids = imas_open(user=user, machine=machine, pulse=pulse, run=run, occurrence=occurrence, new=new, verbose=verbose, backend=backend)
+        ids = imas_open(user=user, machine=machine, pulse=pulse, run=run, occurrence=occurrence, new=new, verbose=verbose, backend=backend, dd_version=ods.imas_version)
 
     except IOError as _excp:
         raise IOError(str(_excp) + '\nIf this is a new pulse/run then set `new=True`')
