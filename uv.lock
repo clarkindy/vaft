@@ -3134,6 +3134,7 @@ imas-python = [
 dev = [
     { name = "black" },
     { name = "flake8" },
+    { name = "ipykernel" },
     { name = "pytest" },
 ]
 
@@ -3180,6 +3181,7 @@ provides-extras = ["imas-python"]
 dev = [
     { name = "black" },
     { name = "flake8" },
+    { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "pytest" },
 ]
 
