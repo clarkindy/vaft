@@ -152,9 +152,6 @@ def imas_set(ids, path, value, skip_missing_nodes=False, allocate=False, ids_is_
             m = ids
         else:
             m = getattr(ids, ds)
-        if hasattr(m, 'time') and not isinstance(m.time, float) and not m.time.size:
-            m.time= numpy.resize(m.time, 1)
-            m.time[0] = -1.0
     elif l2i(path) == 'ids_properties.occurrence':  # IMAS does not store occurrence info as part of the IDSs
         return
     elif skip_missing_nodes is not False:
@@ -386,7 +383,7 @@ def save_omas_imas(ods, user=None, machine=None, pulse=None, run=None, occurrenc
     printd('Saving to IMAS (user:%s machine:%s pulse:%d run:%d, imas_version:%s)' % (user, machine, pulse, run, imas_version), topic='imas')
 
     # ensure requirements for writing data to IMAS are satisfied
-    ods.satisfy_imas_requirements()
+    ods.satisfy_imas_requirements(attempt_fix=False, raise_errors=False)
 
     # get the list of paths from ODS
     paths = set_paths = ods.paths()
@@ -431,15 +428,32 @@ def save_omas_imas(ods, user=None, machine=None, pulse=None, run=None, occurrenc
             set_paths = list(filter(None, set_paths))
 
             # assign the data
+            ds_homogeneous_time = {}
             for path in set_paths:
+                if path[-1] != "time":
+                    printd(f'writing {l2i(path)}')
+                    imas_set(ids, path, ods[path], True)
+                    continue
+                t = ods[path]
+                if not isinstance(t, float) and not t.size:
+                    printd(f'do not write {l2i(path)} since it is empty')
+                    continue
+                if len(path) > 2:
+                    ds_homogeneous_time[path[0]] = 0
+                else:
+                    ds_homogeneous_time[path[0]] = 1
                 printd(f'writing {l2i(path)}')
-                imas_set(ids, path, ods[path], True)
+                imas_set(ids, path, t, True)
 
             # actual write of IDS data to IMAS database
             for ds in ods.keys():
                 occ = ids.occurrence.get(ds, ods.get('ids_properties.occurrence', 0))
+                m = getattr(ids, ds)
+                # If all time nodes were empty, homogeneous_time should be 2
+                printd(f"{ds}.ids_properties.homogeneous_time = {ds_homogeneous_time.get(ds, 2)}", topic='imas_code')
+                m.ids_properties.homogeneous_time = ds_homogeneous_time.get(ds, 2)
                 printd(f"{ds}.put({occ}, DBentry)", topic='imas_code')
-                getattr(ids, ds).put(occ, ids.DBentry)
+                m.put(occ, ids.DBentry)
 
         finally:
             # close connection to IMAS database
